@@ -19,14 +19,4 @@ jobs:
         run: |
           response=$(curl -s "https://rb-bbm-rtool-t2-fw-gway.apps.intranet.bosch.com/createReview/getTempReviewId/1")
           tempReviewId=$(echo "$response" | jq -r '.tempReviewId')
-
-          # Set reviewName to PR title
-          pr_name="${{ github.event.pull_request.title }}"
-
-          # Create JSON request body with PR title
-          post_body=$(echo "{\"documentsList\":[{\"copyOfDocId\":\"\",\"docExtension\":\"LINK\",\"docId\":\"\",\"docNameWithoutTime\":\"${{ github.event.pull_request.html_url }}\",\"plDocSubTypeId\":267,\"predSuccBean\":{\"predecessorDocNameWithoutTime\":\"\",\"predecessorDocNameWithTime\":\"\"}}],\"participantsList\":[{\"participantComments\":\"\",\"participantTypeId\":259,\"participantUserId\":28372},{\"participantComments\":\"\",\"participantTypeId\":260,\"participantUserId\":4002}],\"referenceLinkBeanList\":[],\"reviewDetailsBean\":{\"commonReviewDetail\":{\"buId\":\"1\",\"checkListIds\":[306],\"createdUserId\":28372,\"createReviewMethodId\":null,\"interfaceId\":\"35\",\"isChklstCnfReq\":\"Y\",\"isWithoutWorkProduct\":\"N\",\"plId\":\"1\",\"reviewName\":\"$pr_name\",\"reviewPlanEndDt\":\"2024-04-25\",\"reviewRemarks\":null,\"reviewTypeList\":[{\"reviewTypeVersionId\":584}],\"tempReviewId\":$tempReviewId},\"prismDetails\":{}}}")
-
-          echo "POST Body: $post_body"
-
-          # Make POST request to createReview
-          curl -X POST -H "Content-Type: application/json" -d "$post_body" "https://rb-bbm-rtool-t2-fw-gway.apps.intranet.bosch.com/createReview/sw/generic/${tempReviewId}/1/1"
+          echo "Temp Review ID: $tempReviewId"
