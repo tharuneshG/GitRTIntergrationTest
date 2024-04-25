@@ -60,7 +60,7 @@ jobs:
 			"isChklstCnfReq": "Y",
 			"isWithoutWorkProduct": "N",
 			"plId": "1",
-			"reviewName": "TestGit",
+			"reviewName": "${{ github.event.pull_request.title }}",
 			"reviewPlanEndDt": "2024-04-25",
 			"reviewRemarks": null,
 			"reviewTypeList": [
