@@ -8,6 +8,10 @@ on:
 jobs:
   Create_Review_RT:
     runs-on: ubuntu-latest
+    env:
+      HTTP_PROXY: ${{ secrets.PROXY_HOST }}:${{ secrets.PROXY_PORT }}
+      HTTPS_PROXY: ${{ secrets.PROXY_HOST }}:${{ secrets.PROXY_PORT }}
+      NO_PROXY: "localhost,127.0.0.1,*.bosch.com"
 
     steps:
       - name: Checkout code
