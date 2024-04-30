@@ -10,7 +10,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # Updated to the latest version supporting Node.js 20
 
       - name: Get PR Title
         run: echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
@@ -39,7 +39,7 @@ jobs:
         run: echo "Decoded Content:$DECODED_CONTENT"
 
       - name: Create Task List Comment
-        uses: actions/github-script@v4
+        uses: actions/github-script@v5  # Updated to the latest version supporting Node.js 20
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
