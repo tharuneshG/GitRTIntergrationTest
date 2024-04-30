@@ -32,11 +32,8 @@ jobs:
                 "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
           ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
           echo "ENCODED_CONTENT:$ENCODED_CONTENT"
-          echo "DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)" >> $GITHUB_ENV
+          echo "DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)"
           echo "Decoded Content:$DECODED_CONTENT"
-
-      - name: Print Decoded Content
-        run: echo "Decoded Content:$DECODED_CONTENT"
 
       - name: Create Task List Comment
         uses: actions/github-script@v4
@@ -46,7 +43,7 @@ jobs:
             const comment = `
             ### Task List
             
-            ${process.env.DECODED_CONTENT}
+            ${DECODED_CONTENT}
             `;
             github.issues.createComment({
               issue_number: context.issue.number,
