@@ -15,40 +15,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Determine Task List Filename
+      - name: Determine Task List Filename, Get File Contents, and Create Task List Comment
         run: |
           if [[ "$PR_TITLE" == *"task1"* ]]; then
-            echo "FILENAME=task_list_1.md" >> $GITHUB_ENV
+            FILENAME="task_list_1.md"
           elif [[ "$PR_TITLE" == *"task2"* ]]; then
-            echo "FILENAME=task_list_2.md" >> $GITHUB_ENV
+            FILENAME="task_list_2.md"
           else
             echo "No matching task list found for PR title"
             exit 1
           fi
-
-      - name: Get File Contents
-        run: |
+          
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
+                        "https://api.github.com/repos/${{ github.repository }}/contents/docs/${FILENAME}")
           ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
-          echo "ENCODED_CONTENT:$ENCODED_CONTENT"
           DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
-          echo "Decoded Content:$DECODED_CONTENT"
+          
+          echo "Decoded Content: $DECODED_CONTENT"
 
-      - name: Create Task List Comment
-        uses: actions/github-script@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          DECODED_CONTENT: ${{ env.DECODED_CONTENT }}  # Pass DECODED_CONTENT directly to the script
-          script: |
-            const comment = `
-            ### Task List
-            
-            ${DECODED_CONTENT}
-            `;
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+          # Create Task List Comment
+          const github = require('@actions/github');
+          const context = github.context;
+          const octokit = new github.getOctokit(process.env.GITHUB_TOKEN);
+
+          const comment = `
+          ### Task List
+          
+          ${DECODED_CONTENT}
+          `;
+
+          await octokit.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: comment
+          });
