@@ -42,7 +42,7 @@ jobs:
           const comment = `
           ### Task List
           
-          ${process.env.DECODED_CONTENT}
+          ${DECODED_CONTENT}
           `;
 
           octokit.rest.issues.createComment({
