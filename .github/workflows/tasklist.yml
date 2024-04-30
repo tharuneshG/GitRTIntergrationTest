@@ -35,25 +35,26 @@ jobs:
           file_name="${{ steps.determine_filename.outputs.filename }}"
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                         "https://api.github.com/repos/${{ github.repository }}/contents/${file_name}")
-          echo "::set-output name=content::$(echo "$file_content" | jq -r '.content')"
+          echo "::set-output name=encoded_content::$(echo "$file_content" | jq -r '.content')"
 
       - name: Decode File Contents
         id: decode_content
-        run: echo "::set-output name=decoded_content::$(echo "${{ steps.get_file.outputs.content }}" | base64 -d)"
+        run: |
+          encoded_content="${{ steps.get_file.outputs.encoded_content }}"
+          echo "::set-output name=decoded_content::$(echo "$encoded_content" | base64 --decode)"
 
       - name: Print Decoded Content
-        run: echo "Decoded Content:${{ steps.decode_content.outputs.decoded_content }}"
+        run: echo "Decoded Content: ${{ steps.decode_content.outputs.decoded_content }}"
 
       - name: Create Task List Comment
         uses: actions/github-script@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const content = Buffer.from('${{ steps.decode_content.outputs.decoded_content }}', 'base64').toString('utf-8');
             const comment = `
             ### Task List
             
-            ${content}
+            ${{ steps.decode_content.outputs.decoded_content }}
             `;
             github.issues.createComment({
               issue_number: context.issue.number,
