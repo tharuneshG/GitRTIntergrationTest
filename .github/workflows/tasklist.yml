@@ -13,38 +13,30 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Get PR Title
-        id: pr_title
-        run: echo "::set-output name=title::${{ github.event.pull_request.title }}"
+        run: echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
 
       - name: Determine Task List Filename
-        id: determine_filename
         run: |
-          title="${{ steps.pr_title.outputs.title }}"
-          if [[ "$title" == *"task1"* ]]; then
-            echo "::set-output name=filename::task_list_1.md"
-          elif [[ "$title" == *"task2"* ]]; then
-            echo "::set-output name=filename::task_list_2.md"
+          if [[ "$PR_TITLE" == *"task1"* ]]; then
+            echo "FILENAME=task_list_1.md" >> $GITHUB_ENV
+          elif [[ "$PR_TITLE" == *"task2"* ]]; then
+            echo "FILENAME=task_list_2.md" >> $GITHUB_ENV
           else
-            echo "::error::No matching task list found for PR title"
+            echo "No matching task list found for PR title"
             exit 1
           fi
 
       - name: Get File Contents
-        id: get_file
         run: |
-          file_name="${{ steps.determine_filename.outputs.filename }}"
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                        "https://api.github.com/repos/${{ github.repository }}/contents/${file_name}")
-          echo "::set-output name=encoded_content::$(echo "$file_content" | jq -r '.content')"
+                        "https://api.github.com/repos/${{ github.repository }}/contents/$FILENAME")
+          echo "ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')" >> $GITHUB_ENV
 
       - name: Decode File Contents
-        id: decode_content
-        run: |
-          encoded_content="${{ steps.get_file.outputs.encoded_content }}"
-          echo "::set-output name=decoded_content::$(echo "$encoded_content" | base64 --decode)"
+        run: echo "DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)" >> $GITHUB_ENV
 
       - name: Print Decoded Content
-        run: echo "Decoded Content:${{ steps.decode_content.outputs.decoded_content }}"
+        run: echo "Decoded Content:$DECODED_CONTENT"
 
       - name: Create Task List Comment
         uses: actions/github-script@v4
@@ -54,7 +46,7 @@ jobs:
             const comment = `
             ### Task List
             
-            ${{ steps.decode_content.outputs.decoded_content }}
+            ${process.env.DECODED_CONTENT}
             `;
             github.issues.createComment({
               issue_number: context.issue.number,
