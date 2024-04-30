@@ -30,6 +30,7 @@ jobs:
         run: |
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                         "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
+          echo "File Content Response: $file_content"
           echo "ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')" >> $GITHUB_ENV
 
       - name: Decode File Contents
