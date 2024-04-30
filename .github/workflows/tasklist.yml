@@ -44,7 +44,7 @@ jobs:
           echo "::set-output name=decoded_content::$(echo "$encoded_content" | base64 --decode)"
 
       - name: Print Decoded Content
-        run: echo "Decoded Content: ${{ steps.decode_content.outputs.decoded_content }}"
+        run: echo "Decoded Content:${{ steps.decode_content.outputs.decoded_content }}"
 
       - name: Create Task List Comment
         uses: actions/github-script@v4
