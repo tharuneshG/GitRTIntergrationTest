@@ -32,13 +32,14 @@ jobs:
                 "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
           ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
           echo "ENCODED_CONTENT:$ENCODED_CONTENT"
-          echo "DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)"
+          DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
           echo "Decoded Content:$DECODED_CONTENT"
 
       - name: Create Task List Comment
         uses: actions/github-script@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          DECODED_CONTENT: ${{ env.DECODED_CONTENT }}  # Pass DECODED_CONTENT directly to the script
           script: |
             const comment = `
             ### Task List
