@@ -27,6 +27,7 @@ jobs:
           fi
 
       - name: Get File Contents
+        id: get-file
         run: |
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
@@ -34,6 +35,8 @@ jobs:
           echo "ENCODED_CONTENT:$ENCODED_CONTENT"
           DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
           echo "Decoded Content:$DECODED_CONTENT"
+          echo "::set-output name=decoded_content::$DECODED_CONTENT"  # Export DECODED_CONTENT as an output
+        shell: bash
 
       - name: Create Task List Comment
         uses: actions/github-script@v4
@@ -43,7 +46,7 @@ jobs:
             const comment = `
             ### Task List
             
-            ${DECODED_CONTENT}
+            ${steps.get-file.outputs.decoded_content}  // Accessing decoded content from the previous step
             `;
             github.issues.createComment({
               issue_number: context.issue.number,
