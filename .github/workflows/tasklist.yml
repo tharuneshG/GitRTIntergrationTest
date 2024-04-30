@@ -18,20 +18,19 @@ jobs:
       - name: Determine Task List Filename
         run: |
           if [[ "$PR_TITLE" == *"task1"* ]]; then
-            echo "FILENAME=task_list_1.md"
+            echo "FILENAME=task_list_1.md" >> $GITHUB_ENV
           elif [[ "$PR_TITLE" == *"task2"* ]]; then
-            echo "FILENAME=task_list_2.md"
+            echo "FILENAME=task_list_2.md" >> $GITHUB_ENV
           else
             echo "No matching task list found for PR title"
             exit 1
-          fi >> $GITHUB_ENV
+          fi
 
       - name: Get File Contents
         run: |
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                        "https://api.github.com/repos/${{ github.repository }}/contents/docs/$FILENAME")
+                        "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
           echo "ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')" >> $GITHUB_ENV
-          echo "FILENAME:$FILENAME"
 
       - name: Decode File Contents
         run: echo "DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)" >> $GITHUB_ENV
