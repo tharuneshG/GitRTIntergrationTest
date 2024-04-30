@@ -48,7 +48,7 @@ jobs:
             `;
             github.issues.createComment({
               issue_number: context.issue.number,
-              owner: 'tharuneshG',  // Replace with the owner of the repository
-              repo: 'taskList',   // Replace with the name of the repository
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               body: comment
             });
