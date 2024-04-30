@@ -15,40 +15,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Determine Task List Filename, Get File Contents, and Create Task List Comment
+      - name: Determine Task List Filename
         run: |
           if [[ "$PR_TITLE" == *"task1"* ]]; then
-            FILENAME="task_list_1.md"
+            echo "FILENAME=task_list_1.md" >> $GITHUB_ENV
           elif [[ "$PR_TITLE" == *"task2"* ]]; then
-            FILENAME="task_list_2.md"
+            echo "FILENAME=task_list_2.md" >> $GITHUB_ENV
           else
             echo "No matching task list found for PR title"
             exit 1
           fi
-          
+
+      - name: Get File Contents
+        run: |
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                        "https://api.github.com/repos/${{ github.repository }}/contents/docs/${FILENAME}")
+                "https://api.github.com/repos/${{ github.repository }}/contents/docs/${{ env.FILENAME }}")
           ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
+          echo "ENCODED_CONTENT:$ENCODED_CONTENT"
           DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
-          
-          echo "Decoded Content: $DECODED_CONTENT"
+          echo "Decoded Content:$DECODED_CONTENT"
 
-          # Create Task List Comment using node
-          node - <<EOF
-          const { context, GitHub } = require('@actions/github');
-
-          const octokit = new GitHub(process.env.GITHUB_TOKEN);
-
-          const comment = `
-          ### Task List
-          
-          ${DECODED_CONTENT}
-          `;
-
-          octokit.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: comment
-          });
-          EOF
+      - name: Create Task List Comment
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = `
+            ### Task List
+            
+            ${DECODED_CONTENT}
+            `;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
