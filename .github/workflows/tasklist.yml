@@ -8,23 +8,24 @@ jobs:
   create-task-list:
     runs-on: ubuntu-latest
     
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      # Assuming you set FILENAME elsewhere, adjust accordingly
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get PR Title
-        run: echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
-
       - name: Determine Task List Filename
         run: |
           if [[ "$PR_TITLE" == *"task1"* ]]; then
-            echo "FILENAME=task_list_1.md" >> $GITHUB_ENV
+            echo "FILENAME=task_list_1.md"
           elif [[ "$PR_TITLE" == *"task2"* ]]; then
-            echo "FILENAME=task_list_2.md" >> $GITHUB_ENV
+            echo "FILENAME=task_list_2.md"
           else
             echo "No matching task list found for PR title"
             exit 1
-          fi
+          fi >> $GITHUB_ENV
 
       - name: Get File Contents
         run: |
