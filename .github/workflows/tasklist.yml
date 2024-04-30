@@ -10,8 +10,7 @@ jobs:
     
     env:
       PR_TITLE: ${{ github.event.pull_request.title }}
-      # Assuming you set FILENAME elsewhere, adjust accordingly
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -32,6 +31,7 @@ jobs:
           file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                         "https://api.github.com/repos/${{ github.repository }}/contents/docs/$FILENAME")
           echo "ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')" >> $GITHUB_ENV
+          echo "FILENAME:$FILENAME"
 
       - name: Decode File Contents
         run: echo "DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)" >> $GITHUB_ENV
