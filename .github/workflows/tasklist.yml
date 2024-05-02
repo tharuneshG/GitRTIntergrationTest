@@ -24,20 +24,20 @@ jobs:
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
             # Fetch and decode the file content
+			echo "###FILENAME:$FILENAME"
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                   "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
             DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
 
-            # Create the task list comment
             echo "### Task List for $FILENAME" > decoded_content.txt
             echo "$DECODED_CONTENT" >> decoded_content.txt
             github_token="${{ secrets.GITHUB_TOKEN }}"
-            repo_owner=context.repo.owner # replace with actual owner name
-            repo_name=context.repo.repo  # replace with actual repo name
+            repo="${{ github.repository }}"
             pr_number="${{ github.event.pull_request.number }}"
-            comment_body=$(cat decoded_content.txt)
+            comment_body=$(<decoded_content.txt)
             curl -s -H "Authorization: token $github_token" \
-                 -X POST -d "{\"body\": \"${comment_body}\"}" \
-                 "https://api.github.com/repos/$repo_owner/$repo_name/issues/$pr_number/comments"
+                 -X POST -d "{\"body\": \"$comment_body\"}" \
+                 "https://api.github.com/repos/$repo/issues/$pr_number/comments"
           done
+        shell: bash
