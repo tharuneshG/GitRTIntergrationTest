@@ -7,48 +7,37 @@ on:
 jobs:
   create-task-list:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Determine Task List Filename
-        id: determine-filename
+      - name: Determine Task List Filenames
+        id: determine-filenames
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
-          if [[ "$PR_TITLE" == *"task1"* ]]; then
-            echo "task_list_1.md" > filename.txt
-          elif [[ "$PR_TITLE" == *"task2"* ]]; then
-            echo "task_list_2.md" > filename.txt
-          else
-            echo "No matching task list found for PR title"
-            exit 1
-          fi
+          # Assuming you define your filename logic here
+          echo "::set-output name=files_list::task_list_1.md,task_list_2.md"
 
-      - name: Get File Contents
-        id: get-file
+      - name: Decode and Comment for Each File
         run: |
-          FILENAME=$(cat filename.txt)
-          file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
-          ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
-          DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
-          echo "$DECODED_CONTENT" > decoded_content.txt
+          FILES_LIST="${{ steps.determine-filenames.outputs.files_list }}"
+          IFS=',' read -r -a files <<< "$FILES_LIST"
+          for FILENAME in "${files[@]}"; do
+            # Fetch and decode the file content
+            file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
+            ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
+            DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
 
-      - name: Create Task List Comment
-        uses: actions/github-script@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const decodedContent = require('fs').readFileSync('decoded_content.txt', 'utf8');
-            const comment = `
-            ### Task List
-            
-            ${decodedContent}
-            `;
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+            # Create the task list comment
+            echo "### Task List for $FILENAME" > decoded_content.txt
+            echo "$DECODED_CONTENT" >> decoded_content.txt
+            github_token="${{ secrets.GITHUB_TOKEN }}"
+            repo_owner=context.repo.owner # replace with actual owner name
+            repo_name=context.repo.repo  # replace with actual repo name
+            pr_number="${{ github.event.pull_request.number }}"
+            comment_body=$(cat decoded_content.txt)
+            curl -s -H "Authorization: token $github_token" \
+                 -X POST -d "{\"body\": \"${comment_body}\"}" \
+                 "https://api.github.com/repos/$repo_owner/$repo_name/issues/$pr_number/comments"
+          done
