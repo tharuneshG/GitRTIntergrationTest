@@ -24,21 +24,25 @@ jobs:
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
             echo "Processing file: $FILENAME"
-
+      
             # Fetch and decode the file content
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
             DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
-
+      
             echo "### Task List for $FILENAME" > decoded_content.txt
             echo "$DECODED_CONTENT" >> decoded_content.txt
             github_token="${{ secrets.GITHUB_TOKEN }}"
             repo="${{ github.repository }}"
             pr_number="${{ github.event.pull_request.number }}"
             comment_body=$(<decoded_content.txt)
+            json_payload=$(jq -n --arg body "$comment_body" '{"body": $body}')
+      
             curl -s -H "Authorization: token $github_token" \
-              -X POST -d "{\"body\": \"$comment_body\"}" \
+              -H "Content-Type: application/json" \
+              -X POST -d "$json_payload" \
               "https://api.github.com/repos/$repo/issues/$pr_number/comments"
           done
         shell: bash
+
