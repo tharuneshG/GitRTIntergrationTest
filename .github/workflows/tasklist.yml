@@ -23,10 +23,11 @@ jobs:
           FILES_LIST="${{ steps.determine-filenames.outputs.files_list }}"
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
+            echo "Processing file: $FILENAME"
+
             # Fetch and decode the file content
-			echo "###FILENAME:$FILENAME"
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
+              "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
             DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
 
@@ -37,7 +38,7 @@ jobs:
             pr_number="${{ github.event.pull_request.number }}"
             comment_body=$(<decoded_content.txt)
             curl -s -H "Authorization: token $github_token" \
-                 -X POST -d "{\"body\": \"$comment_body\"}" \
-                 "https://api.github.com/repos/$repo/issues/$pr_number/comments"
+              -X POST -d "{\"body\": \"$comment_body\"}" \
+              "https://api.github.com/repos/$repo/issues/$pr_number/comments"
           done
         shell: bash
