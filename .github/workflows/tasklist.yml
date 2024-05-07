@@ -15,20 +15,43 @@ jobs:
         id: format-tags
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
-          # Use sed to extract the text between RTImport- and -RTChk
           TAG_LIST=$(echo $PR_TITLE | sed -n 's/.*RTImport-\(.*\)-RTChk.*/\1/p')
-          # Format as a pseudo-array string
           TAG_LIST="[${TAG_LIST//, /,}]"
-          echo "Formatted tag list as array: $TAG_LIST"
-          # Set the output for use in later steps
           echo "::set-output name=tag_list::$TAG_LIST"
 
-      - name: Determine Task List Filenames
-        id: determine-filenames
+      - name: Fetch Tags File from Another Repo
+        id: fetch-tags-file
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const content = await github.repos.getContent({
+              owner: 'other-repo-owner',
+              repo: 'other-repo-name',
+              path: 'tags.txt'
+            });
+            return Buffer.from(content.data.content, 'base64').toString('utf8');
+
+      - name: Determine Task Files from Tags
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          # Assuming you define your filename logic here
-          echo "::set-output name=files_list::task_list_1.md,task_list_2.md"
+          TAG_LIST=${{ steps.format-tags.outputs.tag_list }}
+          TAGS_FILE="${{ steps.fetch-tags-file.outputs.result }}"
+          declare -A FILE_SET
+          while read -r line; do
+            TAG_NAME=$(echo "$line" | cut -d ' ' -f1)
+            FILES=$(echo "$line" | sed 's/.*- //')
+            if [[ $TAG_LIST =~ $TAG_NAME ]]; then
+              IFS=',' read -r -a file_array <<< "$FILES"
+              for file in "${file_array[@]}"; do
+                FILE_SET[$file]=1
+              done
+            fi
+          done <<< "$TAGS_FILE"
+          FILES_LIST=$(IFS=,; echo "${!FILE_SET[*]}")
+          echo "Unique task files: $FILES_LIST"
+          echo "::set-output name=files_list::$FILES_LIST"
+
+      - name: Output Files List
+        run: echo "Files to process:${{ steps.determine-task-files.outputs.files_list }}"
 
       - name: Decode and Comment for Each File
         run: |
