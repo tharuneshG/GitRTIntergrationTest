@@ -48,7 +48,7 @@ jobs:
 
       - name: Decode and Comment for Each File
         run: |
-          FILES_LIST="${{ steps.determine-filenames.outputs.files_list }}"
+          FILES_LIST="${{ steps.determine-task-files.outputs.files_list }}"
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
             echo "Processing file: $FILENAME"
