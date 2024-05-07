@@ -1,4 +1,4 @@
-name: Create Task List from PR
+name: Create Task List from PR Tags
 
 on:
   pull_request:
@@ -15,43 +15,36 @@ jobs:
         id: format-tags
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
-          TAG_LIST=$(echo $PR_TITLE | sed -n 's/.*RTImport-\(.*\)-RTChk.*/\1/p')
-          TAG_LIST="[${TAG_LIST//, /,}]"
+          TAG_LIST=$(echo $PR_TITLE | sed -n 's/.*RTImport-\(.*\)-RTChk.*/\1/p' | sed 's/, /,/g')
+          TAG_LIST="[${TAG_LIST}]"
           echo "::set-output name=tag_list::$TAG_LIST"
 
-      - name: Fetch Tags File from Another Repo
+      - name: Fetch Tags File from Specific Repo
         id: fetch-tags-file
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const content = await github.repos.getContent({
-              owner: 'tharuneshG',
-              repo: 'taskList',
-              path: 'docs/tags.txt'
-            });
-            return Buffer.from(content.data.content, 'base64').toString('utf8');
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/tharuneshG/taskList/contents/docs/tags.txt" | \
+            jq -r '.content' | base64 --decode > tags.txt
+          echo "tags.txt content:"
+          cat tags.txt
 
       - name: Determine Task Files from Tags
+        id: determine-task-files
         run: |
           TAG_LIST=${{ steps.format-tags.outputs.tag_list }}
-          TAGS_FILE="${{ steps.fetch-tags-file.outputs.result }}"
           declare -A FILE_SET
           while read -r line; do
-            TAG_NAME=$(echo "$line" | cut -d ' ' -f1)
+            TAG_NAME=$(echo "$line" | cut -d '-' -f1 | xargs)
             FILES=$(echo "$line" | sed 's/.*- //')
             if [[ $TAG_LIST =~ $TAG_NAME ]]; then
               IFS=',' read -r -a file_array <<< "$FILES"
               for file in "${file_array[@]}"; do
-                FILE_SET[$file]=1
+                FILE_SET[$(echo $file | xargs)]=1
               done
             fi
-          done <<< "$TAGS_FILE"
+          done < tags.txt
           FILES_LIST=$(IFS=,; echo "${!FILE_SET[*]}")
-          echo "Unique task files: $FILES_LIST"
           echo "::set-output name=files_list::$FILES_LIST"
-
-      - name: Output Files List
-        run: echo "Files to process:${{ steps.determine-task-files.outputs.files_list }}"
 
       - name: Decode and Comment for Each File
         run: |
