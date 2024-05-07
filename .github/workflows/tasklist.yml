@@ -11,6 +11,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Extract and Format Tags from PR Title
+        id: format-tags
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Remove the prefix and suffix to isolate the tags
+          TAG_LIST=${PR_TITLE#RTImport- }
+          TAG_LIST=${TAG_LIST% -RTChk}
+          # Remove spaces around commas to ensure there are no whitespaces in the list
+          TAG_LIST=${TAG_LIST//, /,}
+          TAG_LIST=${TAG_LIST// ,/,}
+          echo "Formatted tag list: $TAG_LIST"
+          # Set the output for use in later steps
+          echo "::set-output name=tag_list::$TAG_LIST"
+
       - name: Determine Task List Filenames
         id: determine-filenames
         run: |
