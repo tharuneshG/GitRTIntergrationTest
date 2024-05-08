@@ -51,11 +51,12 @@ jobs:
           FILES_LIST="${{ steps.determine-task-files.outputs.files_list }}"
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
-            echo "Processing file: $FILENAME"
+            ENCODED_FILENAME=$(jq -nr --arg fname "$FILENAME" '$fname|@uri')
+            echo "Processing file: $FILENAME (Encoded: $ENCODED_FILENAME)"
       
             # Fetch and decode the file content
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${FILENAME}")
+              "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${ENCODED_FILENAME}")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
             DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
       
