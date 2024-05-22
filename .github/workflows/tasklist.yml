@@ -16,8 +16,8 @@ jobs:
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           TAG_LIST=$(echo $PR_TITLE | sed -n 's/.*RTImport-\(.*\)-RTChk.*/\1/p' | sed 's/, /,/g')
-          TAG_LIST="[${TAG_LIST}]"
-          echo "::set-output name=tag_list::$TAG_LIST"
+          echo "TAG_LIST: [$TAG_LIST]"
+          echo "::set-output name=tag_list::[$TAG_LIST]"
 
       - name: Fetch Tags File from Specific Repo
         id: fetch-tags-file
@@ -33,20 +33,23 @@ jobs:
         run: |
           TAG_LIST=${{ steps.format-tags.outputs.tag_list }}
           echo "TAG_LIST: $TAG_LIST"
+          TAG_LIST=$(echo $TAG_LIST | sed 's/\[//;s/\]//;s/,/ /g')
           declare -A FILE_SET
           while IFS='-' read -r TAG_NAME FILES; do
             TAG_NAME=$(echo "$TAG_NAME" | xargs) # Trim spaces
             FILES=$(echo "$FILES" | xargs) # Trim spaces from the whole string of files
             echo "Processing tag: $TAG_NAME with files: $FILES"
-            if echo "$TAG_LIST" | grep -q "\"$TAG_NAME\""; then # Match exact tag names
-              echo "Tag $TAG_NAME found in TAG_LIST"
-              IFS=',' read -r -a file_array <<< "$FILES"
-              for file in "${file_array[@]}"; do
-                file=$(echo $file | xargs) # Trim spaces from each individual file name
-                FILE_SET["$file"]=1
-                echo "Added file: $file to FILE_SET"
-              done
-            fi
+            for tag in $TAG_LIST; do
+              if [ "$tag" == "$TAG_NAME" ]; then
+                echo "Tag $TAG_NAME found in TAG_LIST"
+                IFS=',' read -r -a file_array <<< "$FILES"
+                for file in "${file_array[@]}"; do
+                  file=$(echo $file | xargs) # Trim spaces from each individual file name
+                  FILE_SET["$file"]=1
+                  echo "Added file: $file to FILE_SET"
+                done
+              fi
+            done
           done < tags.txt
           FILES_LIST=$(IFS=,; echo "${!FILE_SET[*]}")
           echo "Unique task files: $FILES_LIST"
@@ -57,8 +60,8 @@ jobs:
           FILES_LIST="${{ steps.determine-task-files.outputs.files_list }}"
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
-            ENCODED_FILENAME=$(jq -nr --arg fname "$FILENAME" '$fname|@uri')
-            echo "Processing file: $FILENAME (Encoded: $ENCODED_FILENAME)"
+            ENCODED_FILENAME=$(echo "${FILENAME}" | jq -sRr @uri) # Encode the filename for URL
+            echo "Processing file: $ENCODED_FILENAME"
       
             # Fetch and decode the file content
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -80,4 +83,3 @@ jobs:
               "https://api.github.com/repos/$repo/issues/$pr_number/comments"
           done
         shell: bash
-
