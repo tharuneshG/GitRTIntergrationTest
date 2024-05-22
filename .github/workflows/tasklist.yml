@@ -36,15 +36,15 @@ jobs:
           TAG_LIST=$(echo $TAG_LIST | sed 's/\[//;s/\]//;s/,/ /g')
           declare -A FILE_SET
           while IFS='-' read -r TAG_NAME FILES; do
-            TAG_NAME=$(echo "$TAG_NAME" | xargs) # Trim spaces
-            FILES=$(echo "$FILES" | xargs) # Trim spaces from the whole string of files
+            TAG_NAME=$(echo "$TAG_NAME" | xargs | tr -s ' ') # Trim and normalize spaces
+            FILES=$(echo "$FILES" | xargs | tr -s ' ') # Trim and normalize spaces from the whole string of files
             echo "Processing tag: $TAG_NAME with files: $FILES"
             for tag in $TAG_LIST; do
               if [ "$tag" == "$TAG_NAME" ]; then
                 echo "Tag $TAG_NAME found in TAG_LIST"
                 IFS=',' read -r -a file_array <<< "$FILES"
                 for file in "${file_array[@]}"; do
-                  file=$(echo $file | xargs) # Trim spaces from each individual file name
+                  file=$(echo $file | xargs | tr -s ' ') # Trim and normalize spaces from each individual file name
                   FILE_SET["$file"]=1
                   echo "Added file: $file to FILE_SET"
                 done
