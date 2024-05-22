@@ -32,19 +32,24 @@ jobs:
         id: determine-task-files
         run: |
           TAG_LIST=${{ steps.format-tags.outputs.tag_list }}
+          echo "TAG_LIST: $TAG_LIST"
           declare -A FILE_SET
           while IFS='-' read -r TAG_NAME FILES; do
             TAG_NAME=$(echo "$TAG_NAME" | xargs) # Trim spaces
             FILES=$(echo "$FILES" | xargs) # Trim spaces from the whole string of files
+            echo "Processing tag: $TAG_NAME with files: $FILES"
             if echo "$TAG_LIST" | grep -q "\"$TAG_NAME\""; then # Match exact tag names
+              echo "Tag $TAG_NAME found in TAG_LIST"
               IFS=',' read -r -a file_array <<< "$FILES"
               for file in "${file_array[@]}"; do
                 file=$(echo $file | xargs) # Trim spaces from each individual file name
                 FILE_SET["$file"]=1
+                echo "Added file: $file to FILE_SET"
               done
             fi
           done < tags.txt
           FILES_LIST=$(IFS=,; echo "${!FILE_SET[*]}")
+          echo "Unique task files: $FILES_LIST"
           echo "::set-output name=files_list::$FILES_LIST"
 
       - name: Decode and Comment for Each File
