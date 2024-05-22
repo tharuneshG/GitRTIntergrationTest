@@ -33,13 +33,14 @@ jobs:
         run: |
           TAG_LIST=${{ steps.format-tags.outputs.tag_list }}
           declare -A FILE_SET
-          while read -r line; do
-            TAG_NAME=$(echo "$line" | cut -d '-' -f1 | xargs)
-            FILES=$(echo "$line" | sed 's/.*- //')
-            if [[ $TAG_LIST =~ $TAG_NAME ]]; then
+          while IFS='-' read -r TAG_NAME FILES; do
+            TAG_NAME=$(echo "$TAG_NAME" | xargs) # Trim spaces
+            FILES=$(echo "$FILES" | xargs) # Trim spaces from the whole string of files
+            if [[ $TAG_LIST =~ "\"$TAG_NAME\"" ]]; then # Match exact tag names
               IFS=',' read -r -a file_array <<< "$FILES"
               for file in "${file_array[@]}"; do
-                FILE_SET[$(echo $file | xargs)]=1
+                file=$(echo $file | xargs) # Trim spaces from each individual file name
+                FILE_SET["$file"]=1
               done
             fi
           done < tags.txt
