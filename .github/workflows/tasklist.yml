@@ -68,8 +68,7 @@ jobs:
               "https://api.github.com/repos/tharuneshG/testmdexport/contents/${ENCODED_FILENAME}/${ENCODED_FILENAME}.md")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
             DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
-      
-            echo "### Task List for $FILENAME" > decoded_content.txt
+	          
             echo "$DECODED_CONTENT" >> decoded_content.txt
             github_token="${{ secrets.GITHUB_TOKEN }}"
             repo="${{ github.repository }}"
