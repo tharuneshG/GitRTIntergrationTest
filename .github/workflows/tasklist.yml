@@ -60,8 +60,8 @@ jobs:
           FILES_LIST="${{ steps.determine-task-files.outputs.files_list }}"
           IFS=',' read -r -a files <<< "$FILES_LIST"
           for FILENAME in "${files[@]}"; do
-            ENCODED_FILENAME=$(jq -nr --arg fname "$FILENAME" '$fname|@uri')
-            echo "Processing file: $FILENAME (Encoded: $ENCODED_FILENAME)"
+            ENCODED_FILENAME=$(echo "${FILENAME}" | jq -sRr @uri) # Encode the filename for URL
+            echo "Processing file: $ENCODED_FILENAME"
       
             # Fetch and decode the file content
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
