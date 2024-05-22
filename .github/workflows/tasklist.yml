@@ -23,7 +23,7 @@ jobs:
         id: fetch-tags-file
         run: |
           curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/tharuneshG/taskList/contents/docs/tags.txt" | \
+            "https://api.github.com/repos/tharuneshG/testmdexport/contents/tags.txt" | \
             jq -r '.content' | base64 --decode > tags.txt
           echo "tags.txt content:"
           cat tags.txt
@@ -56,7 +56,7 @@ jobs:
       
             # Fetch and decode the file content
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/tharuneshG/taskList/contents/docs/${ENCODED_FILENAME}")
+              "https://api.github.com/repos/tharuneshG/testmdexport/contents/${ENCODED_FILENAME}/${ENCODED_FILENAME}.md")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
             DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
       
