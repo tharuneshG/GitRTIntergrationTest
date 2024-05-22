@@ -36,7 +36,7 @@ jobs:
           while IFS='-' read -r TAG_NAME FILES; do
             TAG_NAME=$(echo "$TAG_NAME" | xargs) # Trim spaces
             FILES=$(echo "$FILES" | xargs) # Trim spaces from the whole string of files
-            if [[ $TAG_LIST =~ "\"$TAG_NAME\"" ]]; then # Match exact tag names
+            if echo "$TAG_LIST" | grep -q "\"$TAG_NAME\""; then # Match exact tag names
               IFS=',' read -r -a file_array <<< "$FILES"
               for file in "${file_array[@]}"; do
                 file=$(echo $file | xargs) # Trim spaces from each individual file name
