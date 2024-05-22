@@ -67,8 +67,7 @@ jobs:
             file_content=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/tharuneshG/testmdexport/contents/${ENCODED_FILENAME}/${ENCODED_FILENAME}.md")
             ENCODED_CONTENT=$(echo "$file_content" | jq -r '.content')
-            DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode)
-	          
+            DECODED_CONTENT=$(echo "$ENCODED_CONTENT" | base64 --decode) 
             echo "$DECODED_CONTENT" >> decoded_content.txt
             github_token="${{ secrets.GITHUB_TOKEN }}"
             repo="${{ github.repository }}"
